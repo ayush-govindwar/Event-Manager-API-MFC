@@ -33,6 +33,11 @@ const UserSchema = new mongoose.Schema({
      type: Boolean,
      default: false,
    },
+   registeredEvents: { type: [mongoose.Schema.Types.ObjectId],
+     ref: 'Event'
+    ,default: [] 
+   },
+
 //   verified: Date,
 //   passwordToken: {
 //     type: String,
