@@ -2,8 +2,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const Ticket = require('../models/Ticket')
 const { v4: uuidv4 } = require('uuid');
-
-
+const  { sendUpdatesEmail , sendCancellationEmail} = require('../utils')
 const createEvent = async (req, res) => {
   const { title, description, date, location, type, ticketPrice, ticketTiers } = req.body;
   const userId = req.user.userId; // Get the user ID from the authenticated user
@@ -63,34 +62,64 @@ const getUserEvents = async (req, res) => {
   }
 };
 const deleteEvent = async (req, res) => {
-  const eventId = req.params.eventId; // Get the event ID from the request parameters
-  const userId = req.user.userId; // Get the user ID from the authenticated user
+  const eventId = req.params.eventId;
+  const userId = req.user.userId;
 
   try {
-    // Check if the user ID is valid
+    // Validate user
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'Invalid user ID. User not found.' });
+      return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Find the event by ID
+    // Find event and verify ownership
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Event not found.' });
     }
 
-    // Check if the authenticated user is the organizer of the event
     if (event.organizer.toString() !== userId) {
-      return res.status(403).json({ message: 'You are not authorized to delete this event.' });
+      return res.status(403).json({ message: 'Unauthorized to delete event.' });
     }
+
+    // Capture registrants and title before deletion
+    const registrants = event.attendees|| [];
+    const eventTitle = event.title;
 
     // Delete the event
     await Event.findByIdAndDelete(eventId);
 
-    // Return success message
+    // Send response first
     res.status(200).json({ message: 'Event deleted successfully' });
+
+    // Send cancellation emails in background
+    try {
+      if (registrants.length > 0) {
+        const users = await User.find({ _id: { $in: registrants } })
+          .select('email name')
+          .lean();
+
+        console.log(`Sending cancellation emails to ${users.length} registrants`);
+
+        await Promise.all(users.map(async (user) => {
+          try {
+            await sendCancellationEmail({
+              name: user.name,
+              email: user.email,
+              eventTitle: eventTitle
+            });
+            console.log(`Cancellation email sent to ${user.email}`);
+          } catch (emailError) {
+            console.error(`Failed to send email to ${user.email}:`, emailError.message);
+          }
+        }));
+      }
+    } catch (emailProcessError) {
+      console.error('Email notification process failed:', emailProcessError.message);
+    }
+
   } catch (error) {
-    console.error('Error deleting event:', error);
+    console.error('Event deletion error:', error);
     res.status(500).json({ message: 'Failed to delete event', error: error.message });
   }
 };
@@ -101,36 +130,45 @@ const updateEvent = async (req, res) => {
   const updates = req.body; 
 
   try {
-    // Check if the user ID is valid
+    // Validate user and event
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Invalid user ID. User not found.' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found.' });
 
-    // Find the event by ID
     const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found.' });
-    }
+    if (!event) return res.status(404).json({ message: 'Event not found.' });
 
-    // Check if the authenticated user is the organizer of the event
+    // Check organizer permission
     if (event.organizer.toString() !== userId) {
-      return res.status(403).json({ message: 'You are not authorized to update this event.' });
+      return res.status(403).json({ message: 'Unauthorized to update event.' });
     }
 
-    // Update the event with the provided details
+    // Update the event
     const updatedEvent = await Event.findByIdAndUpdate(
       eventId,
-      { $set: updates }, // Apply the updates
-      { new: true, runValidators: true } // Return the updated event and run schema validators
+      { $set: updates },
+      { new: true, runValidators: true }
     );
 
-
-    // Return the updated event
+    // Send response first
     res.status(200).json({ message: 'Event updated successfully', event: updatedEvent });
+    const registrants = updatedEvent.attendees || [];
+    if (registrants.length > 0) {
+      const users = await User.find({ _id: { $in: registrants } }).select('email name');
+      
+      await Promise.all(users.map(user => 
+        sendUpdatesEmail({
+          name: user.name,
+          email: user.email,
+          eventTitle: updatedEvent.title, // Adjust field name if necessary
+        })
+      ));
+      console.log('Emails sent to registrants.');
+    }
+  
+
 
   } catch (error) {
-    console.error('Error updating event:', error);
+    console.error('Update error:', error);
     res.status(500).json({ message: 'Failed to update event', error: error.message });
   }
 };
@@ -277,6 +315,87 @@ const getRegisteredEvents = async (req, res) => {
   }
 };
 
+const searchEvents = async (req, res) => {
+  const userId = req.user.userId;
+  const { search, location, type, fromDate, toDate } = req.query;
+
+  try {
+    // Validate user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Base filter: Show public events + user's own private events
+    const baseFilter = {
+      $or: [
+        { type: 'public' },
+        { type: 'private', organizer: userId }
+      ]
+    };
+
+    const filterConditions = [baseFilter];
+
+    // Search in title/description
+    if (search) {
+      filterConditions.push({
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      });
+    }
+
+    // Location filter (case-insensitive partial match)
+    if (location) {
+      filterConditions.push({ location: { $regex: location, $options: 'i' } });
+    }
+
+    // Event type filter
+    if (type && ['public', 'private'].includes(type.toLowerCase())) {
+      filterConditions.push({ type: type.toLowerCase() });
+    }
+
+    // Date range filtering
+    const dateFilter = {};
+    if (fromDate && !isNaN(new Date(fromDate))) {
+      dateFilter.$gte = new Date(fromDate);
+    }
+    if (toDate && !isNaN(new Date(toDate))) {
+      dateFilter.$lte = new Date(toDate);
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      filterConditions.push({ date: dateFilter });
+    }
+
+    // Combine all conditions with AND logic
+    const finalFilter = filterConditions.length > 1 ? 
+      { $and: filterConditions } : 
+      baseFilter;
+
+    const events = await Event.find(finalFilter)
+      .populate('organizer', 'name email')
+      .sort({ date: 1 }); // Sort by nearest date first
+
+    res.status(200).json({ 
+      message: 'Events retrieved successfully', 
+      count: events.length,
+      events 
+    });
+
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ 
+      message: 'Failed to search events', 
+      error: error.message 
+    });
+  }
+};
+
+
+
+
+
 // Export the controller functions
 module.exports = {
   createEvent,
@@ -285,5 +404,7 @@ module.exports = {
   updateEvent,
   verifyAttendance,
   registerEvent,
-  getRegisteredEvents
+  getRegisteredEvents,
+  searchEvents 
+
 }

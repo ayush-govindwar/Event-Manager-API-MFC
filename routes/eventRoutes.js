@@ -1,5 +1,5 @@
 const express = require("express");
-const {createEvent ,getUserEvents ,deleteEvent , updateEvent, registerEvent, verifyAttendance , getRegisteredEvents} = require('../controllers/eventController')
+const {createEvent ,getUserEvents ,deleteEvent , updateEvent, registerEvent, verifyAttendance , getRegisteredEvents, searchEvents} = require('../controllers/eventController')
 const router = express.Router();
 const {authMiddleware} = require('../middleware/authentication')
 
@@ -12,6 +12,7 @@ router.patch('/verify/:ticketId',authMiddleware, verifyAttendance)
 router.patch('/verify/:ticketId',authMiddleware, verifyAttendance)
 router.patch('/verify/:ticketId',authMiddleware, verifyAttendance)
 router.get('/getRegisteredEvents',authMiddleware, getRegisteredEvents)
+router.get('/search',authMiddleware,searchEvents)
 // router.post('/registerEvent/:id', registerEvent)
 // router.get('/getuserEvents', getUserEvents)
 // router.delete('/deleteEvents',deleteEvents)
