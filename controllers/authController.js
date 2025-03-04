@@ -103,8 +103,8 @@ const login = async (req, res) => {
   }
 
   refreshToken = crypto.randomBytes(40).toString('hex');
-  const userAgent = req.headers['user-agent']; //browser device details
-  const ip = req.ip; //users ip
+  const userAgent = req.headers['user-agent']; 
+  const ip = req.ip; 
   const userToken = { refreshToken, ip, userAgent, user: user._id };
 
   await Token.create(userToken); //store ip and useragent in db
@@ -115,11 +115,11 @@ const login = async (req, res) => {
 };
 //the flow is:
 
-// 1️⃣ User logs in → Check if email & password are correct.
-// 2️⃣ Check for an existing refresh token in the database:
+// 1️ User logs in → Check if email & password are correct.
+// 2️ Check for an existing refresh token in the database:
 
-// ✅ If it exists, use that same refresh token and send it in cookies.
-// ❌ If it doesn’t exist, generate a new refresh token, store it in the DB, and send it in cookies.
+// If it exists, use that same refresh token and send it in cookies.
+// If it doesn’t exist, generate a new refresh token, store it in the DB, and send it in cookies.
 
 
 
@@ -136,8 +136,8 @@ const logout = async (req, res) => { //for logout remove the refresh token
   });
   res.status(StatusCodes.OK).json({ msg: 'user logged out!' });
 };
-//1️⃣ res.cookie('accessToken', 'logout', {...}) → Sets the accessToken cookie with the value "logout".
-// 2️⃣ expires: new Date(Date.now()) → Expires the cookie immediately, removing it from the browser.
+//1️ res.cookie('accessToken', 'logout', {...}) → Sets the accessToken cookie with the value "logout".
+// 2️ expires: new Date(Date.now()) → Expires the cookie immediately, removing it from the browser.
 
 
 

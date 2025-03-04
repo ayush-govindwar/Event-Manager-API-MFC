@@ -36,16 +36,6 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-const authorizePermissions = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) { //if true then not allowed
-      throw new CustomError.UnauthorizedError(
-        'Unauthorized to access this route'
-      );
-    }
-    next();
-  };
-};
 const authMiddleware = (req, res, next) => {
   // Get the access token from the signed cookies
   const accessToken = req.signedCookies.accessToken;
@@ -66,6 +56,5 @@ const authMiddleware = (req, res, next) => {
 
 module.exports = {
   authenticateUser,
-  authorizePermissions,
   authMiddleware
 };
