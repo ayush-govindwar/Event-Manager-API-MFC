@@ -378,7 +378,6 @@ Retrieve all events the current user has registered for.
 - dotenv: Environment variable management
 - validator: Input validation
 - cookie-parser: Parse cookies
-- razorpay: Payment integration
 
 ## Error Handling
 The API returns appropriate HTTP status codes along with error messages in JSON format.
