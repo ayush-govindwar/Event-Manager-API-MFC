@@ -73,6 +73,8 @@ The API follows a token-based authentication approach. After registering and ver
 
 #### Register New User
 Register a new user account with email verification.
+The user will get a mail with a link to verify their email.
+
 
 **Endpoint:** `POST /auth/register`
 
