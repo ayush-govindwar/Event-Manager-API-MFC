@@ -200,7 +200,7 @@ const registerEvent = async (req, res) => {
       event: eventId,
       user: userId,
       tier,
-      price: ticketPrice // ✅ Storing price in the ticket
+      price: ticketPrice // Storing price in the ticket
     });
     await ticket.save();
 
