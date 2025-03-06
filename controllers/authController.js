@@ -31,7 +31,7 @@ const register = async (req, res) => {
     role,
     verificationToken,
   });
-  const origin = process.env.BASE_URL;
+  const origin = `${process.env.BASE_URL}/api/v1/auth`;
 
   await sendVerificationEmail({
     name: user.name,
