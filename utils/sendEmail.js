@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport(emailConfig);
 
 const sendEmail = async ({ to, subject, html }) => {
   const mailOptions = {
-    from: '"Your App Name" <your-email@gmail.com>', // Sender address
+    from: '"Ayush Govindwar" swayush.govindwar@gmail.com', // Sender address
     to, // Recipient address
     subject, // Email subject
     html, // Email body (HTML)
