@@ -8,12 +8,13 @@
 // };
 //You create a transporter using nodemailer.createTransport(), passing in an object with SMTP settings.
 //the above obj is passed in transporter nodemailer.createtransport(here)
+// config/email.js
 module.exports = {
-  host: 'smtp.gmail.com', // Gmail's SMTP server
-  port: 465, // Use port 465 for SSL
-  secure: true, // Use SSL
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com', 
+  port: process.env.EMAIL_PORT || 465,
+  secure: true,
   auth: {
-    user: 'swayush.govindwar@gmail.com', // Your Gmail address
-    pass: 'ouvj syac tjxj gbxp', // Your Gmail password or app-specific password
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASSWORD, 
   },
 };
