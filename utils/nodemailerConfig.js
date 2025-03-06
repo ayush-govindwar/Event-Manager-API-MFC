@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 
 module.exports = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com', 
