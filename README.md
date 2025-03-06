@@ -215,7 +215,7 @@ Delete an event and notify all registered attendees via email.
 }
 ```
 
-#### Update Event
+#### Update Event (organiser only)
 Update an event's details and notify all registered attendees.
 
 **Endpoint:** `PUT /event/updateEvent/:eventId`
@@ -255,7 +255,7 @@ Update an event's details and notify all registered attendees.
 
 ### Event Registration and Attendance
 
-#### Register for an Event
+#### Register for an Event 
 Register for an event and select a ticket tier.
 
 **Endpoint:** `POST /event/registerEvent/:eventId`
@@ -279,7 +279,7 @@ Register for an event and select a ticket tier.
 
 > Note: The verification link will be scanned by the organizer to verify attendance of the user.
 
-#### Verify Attendance
+#### Verify Attendance (organiser only)
 Organizers verify attendee presence by accessing the verification link.
 
 **Endpoint:** `PATCH /event/verify/:ticketId`
