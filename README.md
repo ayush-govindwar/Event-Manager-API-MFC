@@ -61,7 +61,11 @@ https://event-manager-api-c7eq.onrender.com/api/v1
 ```
 
 ## Authentication
-The API uses token-based authentication. After login, you'll receive a token that should be included in subsequent requests.
+The API follows a token-based authentication approach. After registering and verifying their email, users receive access and refresh tokens via HTTP-only cookies.
+ ### Note:
+ - The refresh token is used to request a new access token, eliminating the need to include the access token in request headers.
+ - Tokens are securely stored in cookies, preventing direct client-side access.
+
 
 ## Endpoints
 
