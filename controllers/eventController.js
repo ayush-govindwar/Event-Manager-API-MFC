@@ -1,7 +1,7 @@
 const Event = require('../models/Event'); 
 const User = require('../models/User');
 const Ticket = require('../models/Ticket')
-const { v4: uuidv4 } = require('uuid');
+
 const  { sendUpdatesEmail , sendCancellationEmail} = require('../utils')
 const createEvent = async (req, res) => {
   const { title, description, date, location, type, ticketPrice, ticketTiers } = req.body;
@@ -192,7 +192,7 @@ const registerEvent = async (req, res) => {
       return res.status(400).json({ message: 'You are already registered for this event.' });
     }
 
-    // Determine ticket price based on the tier
+    
     const ticketPrice = tier === 'vip' ? event.ticketTiers.vip : event.ticketTiers.regular;
 
     // Create a new ticket and store the price
