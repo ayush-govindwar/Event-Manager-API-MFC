@@ -210,7 +210,7 @@ const registerEvent = async (req, res) => {
     await user.save();
 
     // Generate verification link with ticket id
-    const verificationLink = `${process.env.BASE_URL}}/api/v1/event/verify/${ticket._id}`;
+    const verificationLink = `${process.env.BASE_URL}/api/v1/event/verify/${ticket._id}`;
 
     res.status(201).json({
       message: 'Registration successful. Show this QR code to the organizer.',
