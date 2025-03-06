@@ -12,7 +12,7 @@ const TokenSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true } //this adds created at and updated at and maintains it
+  { timestamps: true } 
 );
 
 module.exports = mongoose.model('Token', TokenSchema);

@@ -13,7 +13,7 @@ const eventSchema = new mongoose.Schema({
     regular: { type: Number, default: 0 },
     vip: { type: Number, default: 0 }
   },
-  createdAt: { type: Date, default: Date.now } // Track when the event was created
+  createdAt: { type: Date, default: Date.now } 
 });
 
 module.exports = mongoose.model('Event', eventSchema);

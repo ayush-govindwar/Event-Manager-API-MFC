@@ -119,7 +119,7 @@ const login = async (req, res) => {
 // 2️ Check for an existing refresh token in the database:
 
 // If it exists, use that same refresh token and send it in cookies.
-// If it doesn’t exist, generate a new refresh token, store it in the DB, and send it in cookies.
+// If it doesn’t exist, generate a new refresh token, store it in the db, and send it in cookies.
 
 
 
@@ -136,7 +136,7 @@ const logout = async (req, res) => { //for logout remove the refresh token
   });
   res.status(StatusCodes.OK).json({ msg: 'user logged out!' });
 };
-//1️ res.cookie('accessToken', 'logout', {...}) → Sets the accessToken cookie with the value "logout".
+//1️ res.cookie('accessToken', 'logout' ) → Sets the accessToken cookie with the value "logout".
 // 2️ expires: new Date(Date.now()) → Expires the cookie immediately, removing it from the browser.
 
 

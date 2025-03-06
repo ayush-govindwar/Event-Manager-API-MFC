@@ -5,10 +5,10 @@ const Ticket = require('../models/Ticket')
 const  { sendUpdatesEmail , sendCancellationEmail} = require('../utils')
 const createEvent = async (req, res) => {
   const { title, description, date, location, type, ticketPrice, ticketTiers } = req.body;
-  const userId = req.user.userId; // Get the user ID from the authenticated user
+  const userId = req.user.userId; // Get the user Id from the authenticated user
 
   try {
-    // Check if the user ID is valid
+    // Check if the userid is valid
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Invalid user ID. User not found.' });
@@ -26,7 +26,7 @@ const createEvent = async (req, res) => {
       organizer: userId // Assign the user who created the event as the organizer
     });
 
-    // Save the event to the database
+    
     await newEvent.save();
 
     // Return the created event
@@ -37,22 +37,22 @@ const createEvent = async (req, res) => {
   }
 };
 const getUserEvents = async (req, res) => {
-  const userId = req.user.userId; // Get the user ID from the authenticated user
+  const userId = req.user.userId; // Get the userid from the authenticated user
 
   try {
-    // Check if the user ID is valid
+    // Check if the userid is valid
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Invalid user ID. User not found.' });
     }
 
-    // Fetch all public events and private events created by the user
+    // Fetch all public events and private events created by the user only
     const events = await Event.find({
       $or: [
         { type: 'public' }, // All public events
         { type: 'private', organizer: userId } // Private events created by the user
       ]
-    }).populate('organizer', 'name email'); // Populate organizer details
+    }).populate('organizer', 'name email'); // Put organizer details
 
     // Return the events
     res.status(200).json({ message: 'Events fetched successfully', events });
@@ -72,7 +72,7 @@ const deleteEvent = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Find event and verify ownership
+    // Find event and verify if user is organizer
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Event not found.' });
@@ -82,7 +82,8 @@ const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized to delete event.' });
     }
 
-    // Capture registrants and title before deletion
+    
+    // get the gegistrants and event title before deleting event
     const registrants = event.attendees|| [];
     const eventTitle = event.title;
 
@@ -92,7 +93,7 @@ const deleteEvent = async (req, res) => {
     // Send response first
     res.status(200).json({ message: 'Event deleted successfully' });
 
-    // Send cancellation emails in background
+    // Send cancellation emails to all registered attendees
     try {
       if (registrants.length > 0) {
         const users = await User.find({ _id: { $in: registrants } })
@@ -137,7 +138,7 @@ const updateEvent = async (req, res) => {
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found.' });
 
-    // Check organizer permission
+    // Check if user is organizer
     if (event.organizer.toString() !== userId) {
       return res.status(403).json({ message: 'Unauthorized to update event.' });
     }
@@ -159,7 +160,7 @@ const updateEvent = async (req, res) => {
         sendUpdatesEmail({
           name: user.name,
           email: user.email,
-          eventTitle: updatedEvent.title, // Adjust field name if necessary
+          eventTitle: updatedEvent.title, // Adjust field name 
         })
       ));
       console.log('Emails sent to registrants.');
@@ -176,7 +177,7 @@ const updateEvent = async (req, res) => {
 const registerEvent = async (req, res) => {
   const eventId = req.params.eventId;
   const userId = req.user.userId;
-  const { tier = 'regular' } = req.body; // Default to "regular"
+  const { tier = 'regular' } = req.body; // Default tier is "regular"
 
   try {
     // Validate user and event
@@ -208,14 +209,14 @@ const registerEvent = async (req, res) => {
     user.registeredEvents.push(eventId);
     await user.save();
 
-    // Generate verification link
+    // Generate verification link with ticket id
     const verificationLink = `${process.env.BASE_URL}}/api/v1/event/verify/${ticket._id}`;
 
     res.status(201).json({
       message: 'Registration successful. Show this QR code to the organizer.',
       verificationLink,
       ticketId: ticket._id,
-      price: ticketPrice // ✅ Returning stored price
+      price: ticketPrice // Returning stored price
     });
 
   } catch (error) {
@@ -224,7 +225,7 @@ const registerEvent = async (req, res) => {
 };
 
 
-// Function to verify attendance using QR code
+// Function to verify attendance using QR code (link)
 const verifyAttendance = async (req, res) => {
   const { ticketId } = req.params;
   const organizerId = req.user.userId;
@@ -247,17 +248,17 @@ const verifyAttendance = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Mark ticket as verified
+    
     ticket.isVerified = true;
     await ticket.save();
 
-    // Update event's attendees (if not already present)
+    // Update events attendees 
     if (!ticket.event.attendees.includes(user._id)) {
       ticket.event.attendees.push(user._id);
       await ticket.event.save();
     }
 
-    // Update user's registeredEvents (if not already present)
+    // Update users registered events (if not already present)
     if (!user.registeredEvents.includes(ticket.event._id)) {
       user.registeredEvents.push(ticket.event._id);
       await user.save();
@@ -281,13 +282,13 @@ const getRegisteredEvents = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    // Find the user and populate registered events along with ticket details
+    // populate registered events along with ticket details
     const user = await User.findById(userId).populate({
       path: 'registeredEvents',
-      select: 'title date location ticketTiers', // Select only necessary fields from Event
+      select: 'title date location ticketTiers', // only these fields
       populate: {
         path: '_id',
-        model: 'Event' // references the Event model
+        model: 'Event' 
       }
     });
 
@@ -295,7 +296,7 @@ const getRegisteredEvents = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch the tickets associated with the user's registered events
+    // Fetch the tickets of users registered events 
     const tickets = await Ticket.find({ user: userId }).populate('event', 'title date location ticketTiers');
 
     // Format response
@@ -326,7 +327,7 @@ const searchEvents = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Base filter: Show public events + user's own private events
+    // Show public events + users own private events
     const baseFilter = {
       $or: [
         { type: 'public' },
@@ -336,7 +337,7 @@ const searchEvents = async (req, res) => {
 
     const filterConditions = [baseFilter];
 
-    // Search in title/description
+    // Search title or description
     if (search) {
       filterConditions.push({
         $or: [
@@ -346,7 +347,7 @@ const searchEvents = async (req, res) => {
       });
     }
 
-    // Location filter (case-insensitive partial match)
+    // Location filter
     if (location) {
       filterConditions.push({ location: { $regex: location, $options: 'i' } });
     }
@@ -368,7 +369,7 @@ const searchEvents = async (req, res) => {
       filterConditions.push({ date: dateFilter });
     }
 
-    // Combine all conditions with AND logic
+    // Combine all conditions
     const finalFilter = filterConditions.length > 1 ? 
       { $and: filterConditions } : 
       baseFilter;
@@ -396,7 +397,7 @@ const searchEvents = async (req, res) => {
 
 
 
-// Export the controller functions
+
 module.exports = {
   createEvent,
   getUserEvents,
