@@ -22,7 +22,7 @@ const eventRouter = require('./routes/eventRoutes');
 const notFoundMiddleware = require('./middleware/not-found');
 const errorHandlerMiddleware = require('./middleware/error-handler');
 
-testing
+//avoid DDos attacks
 app.set('trust proxy', 1);
 app.use(
   rateLimiter({
